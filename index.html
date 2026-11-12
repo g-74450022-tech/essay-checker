@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>SPM Essay Checker</title>
+<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+/* =========================================================
+   TEACHER SETTINGS → see the <script> section (TEACHER_KEY)
+   ========================================================= */
+:root{
+  --bg:#f6f4ff; --card:#fff; --ink:#1f1b3a; --mute:#6b6889; --line:#e7e3fb;
+  --p1:#ff5f8f; --p2:#ff9f43; --p3:#7c5cff; --p4:#22c3a6; --p5:#3aa0ff;
+  --red:#e11d48; --orange:#f97316; --green:#16a34a; --purple:#9333ea;
+  --b2:#cfe6ff; --c1:#eadcff;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:Nunito,system-ui,Arial,sans-serif}
+body{padding-bottom:40px}
+.wrap{max-width:760px;margin:0 auto;padding:0 16px}
+header{background:linear-gradient(120deg,var(--p1),var(--p2) 45%,var(--p3));color:#fff;padding:22px 0 54px;border-radius:0 0 28px 28px}
+header .wrap{display:flex;align-items:center;justify-content:space-between;gap:10px}
+h1{margin:0;font-size:24px;font-weight:900;letter-spacing:.2px}
+header small{display:block;opacity:.9;font-weight:700;font-size:13px}
+.icon-btn{border:0;background:rgba(255,255,255,.22);color:#fff;width:40px;height:40px;border-radius:12px;font-size:19px;cursor:pointer}
+.card{background:var(--card);border-radius:20px;padding:18px;box-shadow:0 6px 24px rgba(80,60,180,.08);margin-top:14px}
+.lift{margin-top:-38px}
+.parts{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.part{border:2px solid var(--line);background:#fff;border-radius:16px;padding:10px 6px;text-align:center;cursor:pointer;font-family:inherit;color:var(--ink);transition:.15s}
+.part b{display:block;font-size:17px;font-weight:900}
+.part span{font-size:11.5px;color:var(--mute);font-weight:700}
+.part.on{border-color:transparent;color:#fff;transform:translateY(-2px)}
+.part.on span{color:#fff;opacity:.9}
+.part[data-p="1"].on{background:var(--p4)} .part[data-p="2"].on{background:var(--p5)} .part[data-p="3"].on{background:var(--p3)}
+input[type=text],textarea{width:100%;border:2px solid var(--line);border-radius:14px;padding:11px 13px;font:inherit;font-size:16px;color:var(--ink);background:#fff;outline:none;transition:.15s}
+input[type=text]:focus,textarea:focus{border-color:var(--p3)}
+textarea{resize:vertical}
+#q{min-height:56px;margin-top:10px}
+#essay{min-height:200px;margin-top:10px;line-height:1.55}
+.row{display:flex;align-items:center;gap:8px;margin-top:8px;flex-wrap:wrap}
+.pill{border:0;border-radius:999px;padding:8px 14px;font:inherit;font-weight:800;font-size:14px;cursor:pointer;background:#f1eeff;color:var(--p3)}
+#wc{margin-left:auto;font-weight:800;font-size:13px;padding:5px 10px;border-radius:999px;background:#f1eeff;color:var(--mute)}
+#wc.ok{background:#dcfce7;color:var(--green)} #wc.warn{background:#ffedd5;color:var(--orange)}
+.thumbs{display:flex;gap:8px;flex-wrap:wrap}
+.thumbs div{position:relative}
+.thumbs img{width:56px;height:56px;object-fit:cover;border-radius:10px;border:2px solid var(--line)}
+.thumbs button{position:absolute;top:-6px;right:-6px;border:0;background:var(--red);color:#fff;border-radius:50%;width:20px;height:20px;font-size:12px;cursor:pointer}
+.go{width:100%;margin-top:14px;border:0;border-radius:16px;padding:16px;font:inherit;font-size:18px;font-weight:900;color:#fff;cursor:pointer;background:linear-gradient(110deg,var(--p1),var(--p3));box-shadow:0 8px 20px rgba(124,92,255,.35)}
+.go:disabled{opacity:.6}
+.prog{margin-top:12px;display:none}
+.bar{height:12px;background:#eee9ff;border-radius:999px;overflow:hidden}
+.bar i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--p4),var(--p5),var(--p3),var(--p1));transition:width .35s}
+.prog p{margin:6px 0 0;text-align:center;font-weight:800;color:var(--p3)}
+/* results */
+#res{display:none}
+.score{display:flex;gap:16px;align-items:center}
+.ring{position:relative;width:110px;height:110px;flex:none}
+.ring svg{transform:rotate(-90deg)}
+.ring div{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.ring b{font-size:32px;font-weight:900;line-height:1}
+.ring span{font-size:12px;color:var(--mute);font-weight:800}
+.crits{flex:1;display:grid;gap:7px}
+.crit{display:grid;grid-template-columns:30px 1fr 30px;align-items:center;gap:8px;font-weight:900;font-size:13px}
+.crit .t{height:10px;background:#f0edff;border-radius:999px;overflow:hidden}
+.crit .t i{display:block;height:100%;border-radius:999px;width:0;transition:width .8s}
+.chips{display:flex;gap:6px;flex-wrap:wrap;margin-top:12px}
+.chip{font-size:12.5px;font-weight:800;padding:5px 11px;border-radius:999px;background:#f1eeff;color:var(--p3)}
+.tabs{position:sticky;top:0;z-index:5;display:grid;grid-template-columns:repeat(4,1fr);gap:6px;background:var(--bg);padding:12px 0 6px}
+.tab{border:0;border-radius:14px;padding:10px 4px;font:inherit;font-weight:900;font-size:13.5px;cursor:pointer;background:#fff;color:var(--mute);box-shadow:0 3px 10px rgba(80,60,180,.06)}
+.tab.on{color:#fff;background:var(--p3)}
+.panel{display:none}
+.panel.on{display:block}
+.script{font-size:16.5px;line-height:2.05}
+.script p,.model p{margin:0 0 14px;position:relative}
+.script p.hasmulti{padding-right:26px}
+.script p.hasmulti::after{content:"‖";position:absolute;right:2px;top:0;color:var(--red);font-weight:900;font-size:20px}
+.s{cursor:pointer;border-radius:4px}
+.mwe{text-decoration:underline solid var(--red) 2px;text-underline-offset:4px}
+.swe{text-decoration:underline wavy var(--orange) 1.5px;text-underline-offset:4px}
+.merit::after{content:"✓";color:var(--green);font-weight:900;margin-left:2px;font-size:.9em;vertical-align:super}
+.rep::after{content:"R";color:var(--purple);font-weight:900;margin-left:2px;font-size:.75em;vertical-align:super}
+.omit{color:var(--red);font-weight:900;cursor:pointer;padding:0 2px;font-size:1.05em}
+.para{color:var(--red);font-weight:900;margin-right:3px}
+.multi{background:repeating-linear-gradient(0deg,transparent 0 1.6em,rgba(225,29,72,.10) 1.6em 2.05em)}
+.mm{color:var(--red);font-weight:900;margin-left:3px}
+.b2{background:var(--b2);padding:1px 2px} .c1{background:var(--c1);padding:1px 2px}
+.legend{display:flex;flex-wrap:wrap;gap:6px 12px;font-size:12.5px;font-weight:700;color:var(--mute);margin-bottom:12px}
+.legend span{white-space:nowrap}
+.fixes{list-style:none;margin:0;padding:0;font-size:14.5px}
+.fixes li{padding:9px 0;border-top:1px dashed var(--line);display:flex;gap:10px}
+.fixes .sym{flex:none;width:26px;height:26px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-weight:900;font-size:13px;color:#fff}
+.fixes s{color:var(--red)} .fixes b{color:var(--green)}
+.fixes small{display:block;color:var(--mute);font-weight:600}
+h3{margin:0 0 10px;font-size:16px;font-weight:900}
+.comment{background:linear-gradient(120deg,#fff3f7,#f3efff);border-radius:16px;padding:14px;font-size:15.5px;line-height:1.6}
+.fb{border-left:5px solid;padding-left:12px;margin-top:16px}
+.fb h4{margin:0;display:flex;justify-content:space-between;align-items:center;font-size:15.5px;font-weight:900}
+.dots{display:flex;gap:4px}.dots i{width:11px;height:11px;border-radius:50%;background:#ece8fb}
+.fb .why{color:var(--mute);font-size:13.5px;margin:4px 0 6px;font-weight:600}
+.fb ul{margin:4px 0;padding-left:20px;font-size:14.5px;line-height:1.5}
+.fb .good li::marker{content:"✓  ";color:var(--green)}
+.fb .imp li::marker{content:"➜  ";color:var(--p2)}
+.model{font-size:16.5px;line-height:1.85}
+.words{display:grid;gap:8px}
+.w{border:2px solid var(--line);border-radius:14px;padding:10px 12px;display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.w .lv{font-size:11px;font-weight:900;padding:3px 8px;border-radius:999px}
+.w .lv.B2{background:var(--b2);color:#1d64b5}.w .lv.C1{background:var(--c1);color:#6d28d9}
+.w .alts{color:var(--p3);font-weight:800}
+.sub{font-size:12px;font-weight:900;color:var(--mute);text-transform:uppercase;letter-spacing:.6px;margin:14px 0 8px}
+.actions{display:flex;gap:8px;margin-top:14px}
+.actions button{flex:1}
+/* bottom sheet */
+#veil{position:fixed;inset:0;background:rgba(20,10,60,.35);display:none;z-index:20}
+#sheet{position:fixed;left:0;right:0;bottom:0;z-index:21;background:#fff;border-radius:22px 22px 0 0;padding:18px 18px calc(22px + env(safe-area-inset-bottom));transform:translateY(110%);transition:.25s;max-width:760px;margin:0 auto;box-shadow:0 -8px 30px rgba(0,0,0,.12)}
+#sheet.on{transform:none}
+#sheet .k{font-size:12px;font-weight:900;text-transform:uppercase;letter-spacing:.6px}
+#sheet .big{font-size:18px;font-weight:800;margin:6px 0}
+#sheet .n{color:var(--mute);font-size:14.5px}
+.modal{position:fixed;inset:0;z-index:30;display:none;align-items:center;justify-content:center;background:rgba(20,10,60,.45);padding:16px}
+.modal .card{width:100%;max-width:420px}
+#toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%) translateY(120px);background:var(--ink);color:#fff;padding:12px 18px;border-radius:14px;font-weight:700;z-index:40;transition:.3s;max-width:90%;text-align:center}
+#toast.on{transform:translateX(-50%)}
+@media print{
+  header,.tabs,#inputCard,.actions,#veil,#sheet,.modal,#toast{display:none!important}
+  body{background:#fff}.card{box-shadow:none;border:1px solid #ddd;break-inside:avoid-page}
+  .panel{display:block!important}.lift{margin-top:0}
+  .b2,.c1,.multi,.comment{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+}
+</style>
+</head>
+<body>
+
+<header><div class="wrap">
+  <div><h1>✍️ Essay Checker</h1><small>SPM 1119/2 · Writing</small></div>
+  <button class="icon-btn" id="keyBtn" title="API key">⚙️</button>
+</div></header>
+
+<main class="wrap">
+  <section class="card lift" id="inputCard">
+    <div class="parts">
+      <button class="part on" data-p="1"><b>Part 1</b><span>80 words</span></button>
+      <button class="part" data-p="2"><b>Part 2</b><span>125–150</span></button>
+      <button class="part" data-p="3"><b>Part 3</b><span>200–250</span></button>
+    </div>
+    <input type="text" id="name" placeholder="Your name (optional)" style="margin-top:12px">
+    <textarea id="q" placeholder="Question / task (paste it here — helps marking Content)"></textarea>
+    <textarea id="essay" placeholder="Paste or type your essay here…"></textarea>
+    <div class="row">
+      <button class="pill" id="camBtn">📷 Photo</button>
+      <div class="thumbs" id="thumbs"></div>
+      <span id="wc">0 words</span>
+    </div>
+    <input type="file" id="file" accept="image/*" multiple hidden>
+    <button class="go" id="go">Check my essay ✨</button>
+    <div class="prog" id="prog"><div class="bar"><i id="barI"></i></div><p id="pct">0%</p></div>
+  </section>
+
+  <section id="res">
+    <div class="card">
+      <div class="score">
+        <div class="ring">
+          <svg width="110" height="110"><circle cx="55" cy="55" r="46" fill="none" stroke="#f0edff" stroke-width="12"/>
+          <circle id="arc" cx="55" cy="55" r="46" fill="none" stroke="url(#g)" stroke-width="12" stroke-linecap="round" stroke-dasharray="289" stroke-dashoffset="289" style="transition:stroke-dashoffset 1s"/>
+          <defs><linearGradient id="g"><stop offset="0" stop-color="#ff5f8f"/><stop offset="1" stop-color="#7c5cff"/></linearGradient></defs></svg>
+          <div><b id="tot">0</b><span>/ 20</span></div>
+        </div>
+        <div class="crits" id="crits"></div>
+      </div>
+      <div class="chips" id="chips"></div>
+    </div>
+
+    <nav class="tabs">
+      <button class="tab on" data-t="script">Script</button>
+      <button class="tab" data-t="fb">Feedback</button>
+      <button class="tab" data-t="model">Model</button>
+      <button class="tab" data-t="words">Words</button>
+    </nav>
+
+    <div class="panel on" id="script">
+      <div class="card">
+        <div class="legend">
+          <span style="color:var(--green)">✓ good</span>
+          <span><u style="text-decoration-color:var(--red);text-decoration-thickness:2px">serious</u></span>
+          <span><u style="text-decoration:underline wavy var(--orange)">minor</u></span>
+          <span style="color:var(--red)">‖ distorted</span>
+          <span style="color:var(--red)">∧ missing</span>
+          <span style="color:var(--purple)">R repeat</span>
+          <span style="color:var(--red)">§ new para</span>
+          <span><span class="b2">B2</span> <span class="c1">C1</span></span>
+        </div>
+        <div class="script" id="scriptBox"></div>
+        <div class="sub">Tap any mark for help</div>
+      </div>
+      <div class="card"><h3>🔧 Corrections</h3><ul class="fixes" id="fixes"></ul></div>
+    </div>
+
+    <div class="panel" id="fb">
+      <div class="card"><h3>💬 For you</h3><div class="comment" id="comment"></div><div id="fbBox"></div></div>
+    </div>
+
+    <div class="panel" id="model">
+      <div class="card">
+        <div class="legend"><span>C1 model of <b>your</b> ideas</span><span><span class="b2">B2</span> <span class="c1">C1</span> tap for upgrades</span><span id="mwc"></span></div>
+        <div class="model" id="modelBox"></div>
+        <button class="pill" id="copyBtn">📋 Copy</button>
+      </div>
+    </div>
+
+    <div class="panel" id="words">
+      <div class="card"><div id="wordsBox"></div></div>
+    </div>
+
+    <div class="actions">
+      <button class="pill" id="pdfBtn">📄 Save PDF</button>
+      <button class="pill" id="newBtn" style="background:var(--p1);color:#fff">➕ New essay</button>
+    </div>
+  </section>
+</main>
+
+<div id="veil"></div>
+<div id="sheet"></div>
+
+<div class="modal" id="keyModal"><div class="card">
+  <h3>🔑 Gemini API key</h3>
+  <input type="text" id="keyIn" placeholder="Paste key (AIza…)" autocomplete="off">
+  <label class="row" style="font-weight:700;font-size:14px"><input type="checkbox" id="remember"> Remember on this device</label>
+  <div class="actions"><button class="pill" id="keyCancel">Cancel</button><button class="pill" id="keySave" style="background:var(--p3);color:#fff">Save</button></div>
+</div></div>
+
+<div id="toast"></div>
+
+<script>
+/* ============================================================
+   TEACHER SETTINGS
+   TEACHER_KEY: put your Gemini key here so students don't need one.
+   (Anyone who views the page source can see it — use a key with a
+   spending limit / free tier only.)
+   ============================================================ */
+const TEACHER_KEY = ''; // keep EMPTY on GitHub — share the key in the link instead (#k=...)
+const MODELS = ['gemini-2.5-flash', 'gemini-flash-latest'];
+
+/* ---------- LPM SPM 1119/2 assessment scales (edit if needed) ---------- */
+const SCALES = {
+1: `PART 1 — Short Communicative Message (about 80 words; email/message/note). Target level A2.
+Score 5 — Content: All content is relevant to the task. Target reader is fully informed. | Communicative Achievement: Uses the conventions of the communicative task in generally appropriate ways to communicate straightforward ideas. | Organisation: Text is connected and coherent, using simple connectors and a limited number of cohesive devices. | Language: Uses everyday vocabulary generally appropriately, while occasionally overusing certain lexis. Uses simple grammatical forms with a good degree of control. While errors are noticeable, meaning can still be determined.
+Score 4 — Performance shares features of Scores 3 and 5.
+Score 3 — Content: Minor irrelevances and/or omissions may be present. Target reader is on the whole informed. | CA: Produces text that communicates simple ideas in simple ways. | O: Text is connected using basic, high-frequency connectors (and, because, so). | L: Uses basic vocabulary reasonably appropriately. Uses simple grammatical forms with some degree of control. Errors may impede meaning at times.
+Score 2 — Performance shares features of Scores 1 and 3.
+Score 1 — Content: Irrelevances and misinterpretation of task may be present. Target reader is minimally informed. | CA: Communicates simple ideas in a very limited way. | O: Produces basic words and phrases. | L: Produces isolated words and phrases. Produces few simple grammatical forms with only limited control.
+Score 0 — Content is totally irrelevant. Target reader is not informed. Performance below Score 1.`,
+2: `PART 2 — Guided Writing (125–150 words). Target level B1.
+Score 5 — Content: All content is relevant to the task. Target reader is fully informed. | CA: Uses the conventions of the communicative task to hold the target reader's attention and communicate straightforward ideas. | O: Text is generally well organised and coherent, using a variety of linking words and cohesive devices. | L: Uses a range of everyday vocabulary appropriately, with occasional inappropriate use of less common lexis. Uses a range of simple and some complex grammatical forms with a good degree of control. Errors do not impede communication.
+Score 4 — Performance shares features of Scores 3 and 5.
+Score 3 — Content: Minor irrelevances and/or omissions may be present. Target reader is on the whole informed. | CA: Uses the conventions of the communicative task in generally appropriate ways to communicate straightforward ideas. | O: Text is connected and coherent, using basic linking words and a limited number of cohesive devices. | L: Uses everyday vocabulary generally appropriately, while occasionally overusing certain lexis. Uses simple grammatical forms with a good degree of control. While errors are noticeable, meaning can still be determined.
+Score 2 — Performance shares features of Scores 1 and 3.
+Score 1 — Content: Irrelevances and misinterpretation of task may be present. Target reader is minimally informed. | CA: Produces text that communicates simple ideas in simple ways. | O: Text is connected using basic, high-frequency linking words. | L: Uses basic vocabulary reasonably appropriately. Uses simple grammatical forms with some degree of control. Errors may impede meaning at times.
+Score 0 — Content is totally irrelevant. Target reader is not informed. Performance below Score 1.`,
+3: `PART 3 — Extended Writing (200–250 words; article, review, report or story). Target level B2.
+Score 5 — Content: All content is relevant to the task. Target reader is fully informed. | CA: Uses the conventions of the communicative task effectively to hold the target reader's attention and communicate straightforward and complex ideas, as appropriate. | O: Text is well organised and coherent, using a variety of cohesive devices and organisational patterns to generally good effect. | L: Uses a range of vocabulary, including less common lexis, appropriately. Uses a range of simple and complex grammatical forms with control and flexibility. Occasional errors may be present but do not impede communication.
+Score 4 — Performance shares features of Scores 3 and 5.
+Score 3 — Content: Minor irrelevances and/or omissions may be present. Target reader is on the whole informed. | CA: Uses the conventions of the communicative task to hold the target reader's attention and communicate straightforward ideas. | O: Text is generally well organised and coherent, using a variety of linking words and cohesive devices. | L: Uses a range of everyday vocabulary appropriately, with occasional inappropriate use of less common lexis. Uses a range of simple and some complex grammatical forms with a good degree of control. Errors do not impede communication.
+Score 2 — Performance shares features of Scores 1 and 3.
+Score 1 — Content: Irrelevances and misinterpretation of task may be present. Target reader is minimally informed. | CA: Uses the conventions of the communicative task in generally appropriate ways to communicate straightforward ideas. | O: Text is connected and coherent, using basic linking words and a limited number of cohesive devices. | L: Uses everyday vocabulary generally appropriately, while occasionally overusing certain lexis. Uses simple grammatical forms with a good degree of control. While errors are noticeable, meaning can still be determined.
+Score 0 — Content is totally irrelevant. Target reader is not informed. Performance below Score 1.`
+};
+const RANGE = {1:[80,80],2:[125,150],3:[200,250]};
+
+const SYS = `You are an experienced SPM English 1119/2 examiner in Malaysia, marking a Form 4/5 student's writing strictly with the official Lembaga Peperiksaan (LPM) assessment scale given. Mark on a best-fit basis, like a real examiner — do not inflate scores.
+
+ANNOTATION (official LPM symbols). Rebuild the student's script exactly, split into paragraphs → sentences → segments. Joining all segment "t" values of a sentence must reproduce the student's original sentence EXACTLY (same spelling, spacing, punctuation — do NOT correct the text itself). Keep unmarked text in long segments (mark "none", cefr "none"); isolate only the words that carry a mark or a CEFR tag.
+mark values:
+- "merit" = ✓ for a genuinely good word, phrase or idea (use sparingly, roughly 1 per paragraph, only when deserved).
+- "mwe" = serious single-word error (straight underline): wrong tense, SVA, wrong word form, wrong word that affects grammar.
+- "swe" = minor single-word error (wavy underline): spelling, capitalisation, minor punctuation.
+- "omit" = ∧ omission: t must be "" (empty) and fix = the missing word(s).
+- "rep" = R unnecessary repetition of a word/idea.
+For mwe/swe/rep: fix = the corrected word(s) (for rep, a better alternative), note = a very short, student-friendly reason (e.g. "Past tense: went").
+Sentence flags: multi=true when a sentence has errors multiple in nature or distorted meaning (‖ in the margin); then multiFix = a corrected version of the whole sentence. newPara=true on a sentence where a new paragraph should have started (§).
+CEFR tags: on segments containing words/phrases from the student's script that are B2 or C1 level (English Vocabulary Profile), set cefr "B2" or "C1" and alt = 2–3 more advanced (C1/C2) words or phrases that fit the same context. Tag only correct usages; tag up to ~10.
+
+FEEDBACK for each criterion (C, CA, O, L): score 0–5; why = one short sentence linking the score to the scale descriptor; good = 1–3 specific strengths quoting the student's own words; improve = 2–3 specific, actionable steps. Simple, encouraging English for Form 4/5 students, addressing the student as "you".
+comment = 3–5 sentences of personalised overall feedback about THIS essay (use the student's name if given), honest and warm, ending with ONE clear priority target.
+cefr = estimated overall CEFR level of the script (e.g. "A2", "B1", "B1+", "B2").
+task = the detected text type (e.g. "Email", "Essay", "Article", "Review", "Report", "Story").
+
+MODEL ESSAY: rewrite the student's essay at C1 CEFR level, keeping the student's own ideas, purpose, text type, format conventions and target reader, improved to fully answer the task. Stay close to the word range of the Part (may exceed by up to 15%). Use paragraphs (and a title only if the text type needs one). Split it into segments; tag B2/C1 words and phrases (aim for 12–20 tags, mostly C1) with cefr and alt = 2–3 advanced alternatives. Joining segments must give the full model text.
+
+If photos are provided, transcribe the handwriting faithfully (keep the student's errors) and use that as the script. Output JSON only.`;
+
+/* ---------- JSON schema ---------- */
+const STR={type:'STRING'}, ARR_S={type:'ARRAY',items:STR};
+const SEG={type:'OBJECT',properties:{t:STR,mark:{type:'STRING',enum:['none','merit','mwe','swe','omit','rep']},fix:STR,note:STR,cefr:{type:'STRING',enum:['none','B2','C1']},alt:ARR_S},required:['t','mark','cefr']};
+const SENT={type:'OBJECT',properties:{newPara:{type:'BOOLEAN'},multi:{type:'BOOLEAN'},multiFix:STR,segs:{type:'ARRAY',items:SEG}},required:['multi','segs']};
+const CRIT={type:'OBJECT',properties:{score:{type:'INTEGER'},why:STR,good:ARR_S,improve:ARR_S},required:['score','why','good','improve']};
+const MSEG={type:'OBJECT',properties:{t:STR,cefr:{type:'STRING',enum:['none','B2','C1']},alt:ARR_S},required:['t','cefr']};
+const SCHEMA={type:'OBJECT',properties:{
+  task:STR,cefr:STR,
+  script:{type:'ARRAY',items:{type:'OBJECT',properties:{sents:{type:'ARRAY',items:SENT}},required:['sents']}},
+  C:CRIT,CA:CRIT,O:CRIT,L:CRIT,comment:STR,
+  model:{type:'ARRAY',items:{type:'OBJECT',properties:{segs:{type:'ARRAY',items:MSEG}},required:['segs']}}
+},required:['task','cefr','script','C','CA','O','L','comment','model']};
+
+/* ---------- helpers ---------- */
+const $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+const esc=s=>String(s??'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+let part=1, imgs=[], DATA=null, POP=[];
+const store={get(k){try{return localStorage.getItem(k)}catch(e){return null}},set(k,v){try{localStorage.setItem(k,v)}catch(e){}},del(k){try{localStorage.removeItem(k)}catch(e){}}};
+/* Key via link: share  https://…/#k=YOUR_KEY  → saved on the student's device, then hidden from the address bar */
+const hk=new URLSearchParams(location.hash.slice(1)).get('k');
+if(hk){store.set('ec_key',hk);history.replaceState(null,'',location.pathname+location.search)}
+let KEY=TEACHER_KEY||hk||store.get('ec_key')||'';
+if(!TEACHER_KEY&&KEY) $('#keyBtn').style.display='none';
+if(TEACHER_KEY) $('#keyBtn').style.display='none';
+
+/* sounds */
+let AC;
+function tone(f,d=.08,type='sine',v=.07,delay=0){try{AC=AC||new (window.AudioContext||window.webkitAudioContext)();const t=AC.currentTime+delay,o=AC.createOscillator(),g=AC.createGain();o.type=type;o.frequency.value=f;g.gain.setValueAtTime(v,t);g.gain.exponentialRampToValueAtTime(.0001,t+d);o.connect(g).connect(AC.destination);o.start(t);o.stop(t+d+.02)}catch(e){}}
+const sClick=()=>tone(700,.05,'triangle');
+const sUp=()=>{tone(520,.08);tone(780,.12,'sine',.07,.08)};
+const sWin=()=>[523,659,784,1047].forEach((f,i)=>tone(f,.18,'triangle',.08,i*.1));
+const sErr=()=>{tone(220,.18,'sawtooth',.05);tone(170,.22,'sawtooth',.05,.15)};
+function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('on');clearTimeout(t._h);t._h=setTimeout(()=>t.classList.remove('on'),3200)}
+
+/* ---------- input UI ---------- */
+$$('.part').forEach(b=>b.onclick=()=>{sClick();$$('.part').forEach(x=>x.classList.remove('on'));b.classList.add('on');part=+b.dataset.p;wc()});
+function wc(){const n=($('#essay').value.trim().match(/\S+/g)||[]).length,[a,b]=RANGE[part],el=$('#wc');
+  el.textContent=n+(part===1?' / ~80':` / ${a}–${b}`)+' words';
+  el.className=!n?'':(n>=a*.9&&n<=b*1.1?'ok':'warn')}
+$('#essay').oninput=wc; wc();
+$('#camBtn').onclick=()=>{sClick();$('#file').click()};
+$('#file').onchange=async e=>{for(const f of e.target.files){imgs.push(await shrink(f))}e.target.value='';drawThumbs();sUp()};
+function drawThumbs(){$('#thumbs').innerHTML=imgs.map((s,i)=>`<div><img src="${s}"><button data-i="${i}">×</button></div>`).join('');
+  $$('#thumbs button').forEach(b=>b.onclick=()=>{imgs.splice(+b.dataset.i,1);drawThumbs();sClick()})}
+function shrink(file){return new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>{const im=new Image();im.onload=()=>{const m=1600,k=Math.min(1,m/Math.max(im.width,im.height)),c=document.createElement('canvas');c.width=im.width*k;c.height=im.height*k;c.getContext('2d').drawImage(im,0,0,c.width,c.height);res(c.toDataURL('image/jpeg',.85))};im.onerror=rej;im.src=r.result};r.readAsDataURL(file)})}
+
+/* key modal */
+const openKey=()=>{$('#keyIn').value=KEY;$('#remember').checked=!!store.get('ec_key');$('#keyModal').style.display='flex'};
+$('#keyBtn').onclick=()=>{sClick();openKey()};
+$('#keyCancel').onclick=()=>{$('#keyModal').style.display='none'};
+$('#keySave').onclick=()=>{KEY=$('#keyIn').value.trim();if($('#remember').checked)store.set('ec_key',KEY);else store.del('ec_key');$('#keyModal').style.display='none';sUp();toast('Key saved')};
+
+/* ---------- check ---------- */
+let timer;
+function progress(on){const p=$('#prog');if(!on){clearInterval(timer);setP(100);setTimeout(()=>p.style.display='none',600);return}
+  p.style.display='block';let v=0;setP(0);timer=setInterval(()=>{v+=(93-v)*.035;setP(v)},350)}
+function setP(v){$('#barI').style.width=v+'%';$('#pct').textContent=Math.round(v)+'%'}
+
+$('#go').onclick=async()=>{
+  sClick();
+  const essay=$('#essay').value.trim();
+  if(!essay&&!imgs.length){sErr();return toast('Paste your essay or add a photo 📷')}
+  if(!KEY){openKey();return toast('Add the API key first')}
+  const btn=$('#go');btn.disabled=true;btn.textContent='Checking…';progress(true);
+  const name=$('#name').value.trim();
+  const txt=`${SCALES[part]}
+
+STUDENT: ${name||'(not given)'} — Form 4/5
+PART: ${part}
+QUESTION / TASK: ${$('#q').value.trim()||'(not given — infer the task from the script)'}
+${essay?`STUDENT SCRIPT:\n"""\n${essay}\n"""`:'STUDENT SCRIPT: see the attached photo(s).'}`;
+  const parts=[{text:txt},...imgs.map(d=>({inline_data:{mime_type:'image/jpeg',data:d.split(',')[1]}}))];
+  try{
+    DATA=await ask(parts);
+    progress(false);render();sWin();
+  }catch(e){progress(false);sErr();toast(e.message||'Something went wrong. Try again.')}
+  btn.disabled=false;btn.textContent='Check my essay ✨';
+};
+
+async function ask(parts){
+  let last;
+  for(const m of MODELS){
+    try{
+      const r=await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${m}:generateContent?key=${encodeURIComponent(KEY)}`,{
+        method:'POST',headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({systemInstruction:{parts:[{text:SYS}]},contents:[{role:'user',parts}],
+          generationConfig:{temperature:.4,maxOutputTokens:32000,responseMimeType:'application/json',responseSchema:SCHEMA}})});
+      const j=await r.json();
+      if(!r.ok){last=new Error(j.error?.message||('Error '+r.status));if([400,401,403].includes(r.status)&&!/not found|not supported/i.test(last.message))throw last;continue}
+      const c=j.candidates?.[0];
+      if(c?.finishReason==='MAX_TOKENS')throw new Error('Essay too long to process. Try a shorter one.');
+      const t=(c?.content?.parts||[]).map(p=>p.text||'').join('');
+      if(!t)throw new Error('No answer received. Try again.');
+      return JSON.parse(t.slice(t.indexOf('{'),t.lastIndexOf('}')+1));
+    }catch(e){last=e;if(/key|permission|API_KEY/i.test(e.message))break}
+  }
+  throw last||new Error('Could not reach Gemini.');
+}
+
+/* ---------- render ---------- */
+const CN={C:'Content',CA:'Communicative Achievement',O:'Organisation',L:'Language'};
+const CC={C:'#ff5f8f',CA:'#ff9f43',O:'#22c3a6',L:'#7c5cff'};
+function reg(o){POP.push(o);return POP.length-1}
+
+function render(){
+  const d=DATA;POP=[];
+  const sc=k=>Math.max(0,Math.min(5,+d[k]?.score||0));
+  const total=['C','CA','O','L'].reduce((a,k)=>a+sc(k),0);
+  $('#res').style.display='block';
+  $('#tot').textContent=total;
+  setTimeout(()=>$('#arc').style.strokeDashoffset=289-289*total/20,60);
+  $('#crits').innerHTML=['C','CA','O','L'].map(k=>`<div class="crit"><span style="color:${CC[k]}">${k}</span><div class="t"><i data-w="${sc(k)*20}" style="background:${CC[k]}"></i></div><span>${sc(k)}/5</span></div>`).join('');
+  setTimeout(()=>$$('.crit i').forEach(i=>i.style.width=i.dataset.w+'%'),60);
+  const n=($('#essay').value.trim().match(/\S+/g)||[]).length;
+  const lvl=total>=17?'🌟 Excellent':total>=13?'👍 Good':total>=9?'🙂 Fair':'💪 Keep going';
+  $('#chips').innerHTML=[lvl,'Part '+part,d.task,'CEFR '+d.cefr,n?n+' words':''].filter(Boolean).map(c=>`<span class="chip">${esc(c)}</span>`).join('');
+
+  /* script */
+  const fixes=[];
+  $('#scriptBox').innerHTML=(d.script||[]).map(p=>{
+    let multi=false;
+    const body=(p.sents||[]).map(s=>{
+      let h=s.newPara?`<span class="para s" data-i="${reg({k:'§ New paragraph',c:'var(--red)',big:'Start a new paragraph here.'})}">§</span>`:'';
+      if(s.newPara)fixes.push({sym:'§',c:'var(--red)',txt:'Start a new paragraph here'});
+      const inner=(s.segs||[]).map(g=>seg(g,fixes)).join('');
+      if(s.multi){multi=true;const i=reg({k:'‖ Distorted meaning',c:'var(--red)',big:s.multiFix||'',n:'This sentence has several errors. Better version above.'});
+        fixes.push({sym:'‖',c:'var(--red)',txt:`<b>${esc(s.multiFix||'')}</b>`,sub:'Whole sentence rewritten'});
+        h+=`<span class="multi s" data-i="${i}">${inner}</span><span class="mm s" data-i="${i}">‖</span>`}
+      else h+=inner;
+      return h}).join(' ');
+    return `<p class="${multi?'hasmulti':''}">${body}</p>`}).join('');
+  $('#fixes').innerHTML=fixes.length?fixes.map(f=>`<li><span class="sym" style="background:${f.c}">${f.sym}</span><div>${f.txt}${f.sub?`<small>${esc(f.sub)}</small>`:''}</div></li>`).join(''):'<li>No errors marked — well done! 🎉</li>';
+
+  /* feedback */
+  $('#comment').textContent=d.comment||'';
+  $('#fbBox').innerHTML=['C','CA','O','L'].map(k=>{const c=d[k]||{};return `<div class="fb" style="border-color:${CC[k]}">
+    <h4>${CN[k]}<span class="dots">${[1,2,3,4,5].map(i=>`<i style="${i<=sc(k)?'background:'+CC[k]:''}"></i>`).join('')}</span></h4>
+    <div class="why">${esc(c.why)}</div>
+    ${c.good?.length?`<ul class="good">${c.good.map(x=>`<li>${esc(x)}</li>`).join('')}</ul>`:''}
+    ${c.improve?.length?`<ul class="imp">${c.improve.map(x=>`<li>${esc(x)}</li>`).join('')}</ul>`:''}</div>`}).join('');
+
+  /* model */
+  const mtext=(d.model||[]).map(p=>(p.segs||[]).map(g=>g.t).join('')).join('\n\n');
+  $('#mwc').textContent=(mtext.match(/\S+/g)||[]).length+' words';
+  $('#modelBox').innerHTML=(d.model||[]).map(p=>`<p>${(p.segs||[]).map(g=>cefrSpan(g,'')).join('')}</p>`).join('');
+  $('#copyBtn').onclick=()=>{navigator.clipboard?.writeText(mtext).then(()=>{sUp();toast('Model essay copied')})};
+
+  /* words */
+  const list=(src)=>{const seen=new Set(),out=[];src.forEach(g=>{if(g.cefr&&g.cefr!=='none'){const w=g.t.trim().replace(/^[^\w]+|[^\w]+$/g,'');const k=w.toLowerCase();if(w&&!seen.has(k)){seen.add(k);out.push({w,lv:g.cefr,alt:g.alt||[]})}}});return out};
+  const mine=list((d.script||[]).flatMap(p=>(p.sents||[]).flatMap(s=>s.segs||[])));
+  const mod=list((d.model||[]).flatMap(p=>p.segs||[]));
+  const row=x=>`<div class="w"><span class="lv ${x.lv}">${x.lv}</span><b>${esc(x.w)}</b>${x.alt.length?`→ <span class="alts">${x.alt.map(esc).join(' · ')}</span>`:''}</div>`;
+  $('#wordsBox').innerHTML=`<div class="sub" style="margin-top:0">⭐ Your strong words</div><div class="words">${mine.length?mine.map(row).join(''):'<div class="w">No B2/C1 words yet — try the upgrades below!</div>'}</div>
+    <div class="sub">🚀 From the model essay</div><div class="words">${mod.map(row).join('')}</div>`;
+
+  showTab('script');
+  $('#res').scrollIntoView({behavior:'smooth'});
+}
+
+function cefrSpan(g,extra){
+  const lv=g.cefr&&g.cefr!=='none'?g.cefr:'';
+  if(!lv&&!extra)return esc(g.t);
+  const cls=[lv?lv.toLowerCase():'',extra].join(' ').trim();
+  const i=reg({k:(extra?'':'')+(lv?lv+' word':''),c:lv==='C1'?'#6d28d9':'#1d64b5',big:g.t.trim(),alt:g.alt,fix:g.fix,note:g.note,mark:g.mark});
+  return `<span class="s ${cls}" data-i="${i}">${esc(g.t)}</span>`;
+}
+const MK={merit:['✓ Good','var(--green)','merit'],mwe:['Serious error','var(--red)','mwe'],swe:['Minor error','var(--orange)','swe'],rep:['R Repetition','var(--purple)','rep']};
+function seg(g,fixes){
+  if(g.mark==='omit'){const i=reg({k:'∧ Missing word',c:'var(--red)',big:'Add: '+(g.fix||''),n:g.note});
+    fixes.push({sym:'∧',c:'var(--red)',txt:`add <b>${esc(g.fix)}</b>`,sub:g.note});
+    return `${esc(g.t)}<span class="omit s" data-i="${i}">∧</span>`}
+  const m=MK[g.mark];
+  if(m&&g.mark!=='merit')fixes.push({sym:g.mark==='rep'?'R':g.mark==='mwe'?'—':'~',c:m[1],txt:`<s>${esc(g.t.trim())}</s> → <b>${esc(g.fix)}</b>`,sub:g.note});
+  if(!m&&(!g.cefr||g.cefr==='none'))return esc(g.t);
+  const lv=g.cefr&&g.cefr!=='none'?g.cefr:'';
+  const i=reg({k:m?m[0]:lv+' word',c:m?m[1]:(lv==='C1'?'#6d28d9':'#1d64b5'),big:m&&g.mark!=='merit'?`${g.t.trim()} → ${g.fix||''}`:g.t.trim(),n:g.note,alt:g.alt,lv});
+  return `<span class="s ${m?m[2]:''} ${lv?lv.toLowerCase():''}" data-i="${i}">${esc(g.t)}</span>`;
+}
+
+/* bottom sheet */
+document.addEventListener('click',e=>{
+  const s=e.target.closest('.s');if(!s)return;
+  const o=POP[+s.dataset.i];if(!o)return;sClick();
+  const lv=o.lv||(/^(B2|C1)/.test(o.k)?o.k.slice(0,2):'');
+  $('#sheet').innerHTML=`<div class="k" style="color:${o.c}">${esc(o.k)}</div><div class="big">${esc(o.big)}</div>
+    ${o.n?`<div class="n">${esc(o.n)}</div>`:''}
+    ${o.alt?.length?`<div class="sub">${lv?lv+' · ':''}Upgrade to</div><div class="chips" style="margin-top:0">${o.alt.map(a=>`<span class="chip">${esc(a)}</span>`).join('')}</div>`:''}`;
+  $('#veil').style.display='block';$('#sheet').classList.add('on');
+});
+$('#veil').onclick=()=>{$('#veil').style.display='none';$('#sheet').classList.remove('on')};
+
+/* tabs & actions */
+function showTab(t){$$('.tab').forEach(b=>b.classList.toggle('on',b.dataset.t===t));$$('.panel').forEach(p=>p.classList.toggle('on',p.id===t))}
+$$('.tab').forEach(b=>b.onclick=()=>{sClick();showTab(b.dataset.t)});
+$('#pdfBtn').onclick=()=>{sClick();window.print()};
+$('#newBtn').onclick=()=>{sClick();$('#essay').value='';$('#q').value='';imgs=[];drawThumbs();wc();$('#res').style.display='none';window.scrollTo({top:0,behavior:'smooth'})};
+</script>
+</body>
+</html>
